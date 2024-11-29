@@ -1,5 +1,10 @@
 package com.drtshock.playervaults.util;
 
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
 public class Permission {
     private static final String PREFIX = "playervaults.";
 
@@ -24,5 +29,19 @@ public class Permission {
 
     public static String size(int size) {
         return SIZE_PREFIX + size;
+    }
+
+    public static List<String> getAllConstant() {
+        return Arrays.stream(Permission.class.getDeclaredFields())
+                .filter(f -> Modifier.isStatic(f.getModifiers()) && Modifier.isPublic(f.getModifiers()))
+                .map(f -> {
+                    try {
+                        return (String) f.get(null);
+                    } catch (IllegalAccessException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

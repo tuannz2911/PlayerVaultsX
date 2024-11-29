@@ -24,6 +24,7 @@ import com.drtshock.playervaults.commands.DeleteCommand;
 import com.drtshock.playervaults.commands.HelpMeCommand;
 import com.drtshock.playervaults.commands.SignCommand;
 import com.drtshock.playervaults.commands.SignSetInfo;
+import com.drtshock.playervaults.commands.TicketInfoCommand;
 import com.drtshock.playervaults.commands.VaultCommand;
 import com.drtshock.playervaults.config.Loader;
 import com.drtshock.playervaults.config.file.Config;
@@ -89,7 +90,9 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -120,6 +123,7 @@ public class PlayerVaults extends JavaPlugin {
     private BukkitAudiences platform;
     private final Translation translation = new Translation(this);
     private final List<String> exceptions = new CopyOnWriteArrayList<>();
+    private String startupLog;
     private String updateCheck;
     private Response updateResponse;
 
@@ -146,6 +150,35 @@ public class PlayerVaults extends JavaPlugin {
             this.getServer().getPluginManager().disablePlugin(this);
             return;
         }
+        StringBuilder startupBuilder = new StringBuilder();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                if (record.getMessage() != null && record.getMessage().contains("Loaded class {0}")) {
+                    return;
+                }
+                if (record.getThrown() == null) {
+                    startupBuilder.append('[').append(record.getLevel().getName()).append("] ").append(record.getMessage()).append('\n');
+                } else {
+                    StringWriter stringWriter = new StringWriter();
+                    PrintWriter printWriter = new PrintWriter(stringWriter);
+                    record.getThrown().printStackTrace(printWriter);
+                    startupBuilder.append('[').append(record.getLevel().getName()).append("] ").append(record.getMessage()).append('\n')
+                            .append(stringWriter).append('\n');
+                }
+            }
+
+            @Override
+            public void flush() {
+
+            }
+
+            @Override
+            public void close() throws SecurityException {
+
+            }
+        };
+        getLogger().addHandler(handler);
         instance = this;
         long start = System.currentTimeMillis();
         long time = System.currentTimeMillis();
@@ -179,7 +212,7 @@ public class PlayerVaults extends JavaPlugin {
         getCommand("pvdel").setExecutor(new DeleteCommand(this));
         getCommand("pvconvert").setExecutor(new ConvertCommand(this));
         getCommand("pvsign").setExecutor(new SignCommand(this));
-        getCommand("pvhelpme").setExecutor(new HelpMeCommand(this));
+        getCommand("pvticketinfo").setExecutor(new TicketInfoCommand(this));
         getCommand("pvconsole").setExecutor(new ConsoleCommand(this));
         update.meow = this.getClass().getDeclaredMethods().length;
         debug("registered commands", time);
@@ -334,6 +367,12 @@ public class PlayerVaults extends JavaPlugin {
                 }
             }
         }.runTaskTimerAsynchronously(this, 1, 20 /* ticks */ * 60 /* seconds in a minute */ * 60 /* minutes in an hour*/);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                startupLog = startupBuilder.toString();
+            }
+        }.runTask(this);
     }
 
     private void metricsLine(String name, Callable<Integer> callable) {
@@ -682,6 +721,10 @@ public class PlayerVaults extends JavaPlugin {
             builder.append(e);
         }
         return builder.toString();
+    }
+
+    public String getStartupLog() {
+        return this.startupLog;
     }
 
     private static class UpdateCheck {

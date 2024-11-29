@@ -11,20 +11,24 @@ commands:
   pv:
     description: Open a vault.
     aliases: [vault, chest, playervaults, vc]
+    permission: playervaults.command.use
   pvdel:
     description: Delete a vault.
     aliases: [vaultdel]
+    permission: playervaults.delete
   pvsign:
     description: Manage vault signs.
     aliases: [vaultsign]
+    permission: playervaults.sign.set
   pvconvert:
     description: Convert other plugins to PlayerVaultsX.
     aliases: [vaultconvert]
+    permission: playervaults.convert
   pvreload:
     description: Reload the configuration and language files.
     permission: playervaults.admin
-  pvhelpme:
-    description: Pastes debug info to get better assistance.
+  pvticketinfo:
+    description: Collects debug info to get better assistance.
     permission: playervaults.admin
   pvconsole:
     description: Console-only commands
